@@ -33,7 +33,7 @@ OVPN_SERVER_PROTOCOL="UDP"
 Create OpenVPN directory on **host machine**.
 
 ```bash
-mkdir -p /etc/openvpn-$OVPN_SERVER_NAME
+mkdir -p /etc/openvpn-${OVPN_SERVER_NAME}
 ```
 
 ### Step 3: Run container and attach to it.
@@ -43,7 +43,7 @@ To run container and create new instance of container's shell execute the follow
 ```bash
 docker run \
   -it \
-  --mount type=bind,source=/etc/openvpn-$OVPN_SERVER_NAME,target=/etc/openvpn \
+  --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn \
   eahome00/centos7-openvpn \
   /bin/bash
 ```
@@ -62,13 +62,13 @@ curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.3/EasyRSA-3.
 mv ${OVPN_SERVER_ROOT}/EasyRSA-3.0.3 ${EASY_RSA_ROOT}
 
 # Populate Easy RSA vars.
-echo "set_var EASYRSA_KEY_SIZE $RSA_KEY_SIZE" > ${EASY_RSA_ROOT}/vars
+echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
 
 # Create the PKI, set up the CA, the DH params and the server + client certificates.
 cd ${EASY_RSA_ROOT}
 ./easyrsa init-pki
 ./easyrsa --batch build-ca nopass
-openssl dhparam -out dh.pem $DH_KEY_SIZE
+openssl dhparam -out dh.pem ${DH_KEY_SIZE}
 ./easyrsa build-server-full server nopass
 ./easyrsa build-client-full client nopass
 EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
@@ -93,8 +93,8 @@ Execute the following snippet in **container**.
 ```bash
 # Generate server configuration file.
 cat > ${OVPN_SERVER_ROOT}/server.conf << EOF
-port $OVPN_SERVER_PORT
-proto $OVPN_SERVER_PROTOCOL
+port ${OVPN_SERVER_PORT}
+proto ${OVPN_SERVER_PROTOCOL,,}
 dev tun
 user nobody
 group nobody
@@ -131,8 +131,8 @@ Execute the following snippet in **container**.
 # Generate client configuration file.
 cat > ${OVPN_SERVER_ROOT}/client.ovpn << EOF
 client
-proto $OVPN_SERVER_PROTOCOL
-remote $OVPN_SERVER_IP $OVPN_SERVER_PORT
+proto ${OVPN_SERVER_PROTOCOL,,}
+remote ${OVPN_SERVER_IP} ${OVPN_SERVER_PORT}
 dev tun
 resolv-retry infinite
 nobind
@@ -141,7 +141,7 @@ persist-tun
 remote-cert-tls server
 auth SHA256
 auth-nocache
-cipher $OVPN_SERVER_CIPHER
+cipher ${OVPN_SERVER_CIPHER}
 tls-client
 tls-version-min 1.2
 tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
@@ -212,8 +212,8 @@ Execute the following snippet on **host machine**.
 docker run \
   -it \
   --cap-add=NET_ADMIN \
-  --mount type=bind,source=/etc/openvpn-$server,target=/etc/openvpn,readonly \
-  -p 0.0.0.0:$OVPN_SERVER_PORT:$OVPN_SERVER_PORT/$OVPN_SERVER_PROTOCOL \
+  --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
+  -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
   eahome00/centos7-openvpn \
   /etc/openvpn/server.sh
 ```
