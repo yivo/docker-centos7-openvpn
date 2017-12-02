@@ -196,7 +196,15 @@ chmod u+x ${OVPN_SERVER_ROOT}/server.sh
 
 Press `CTRL+C` or type `exit` in **container's shell**.
 
-### Step 11: Run OpenVPN server.
+### Step 11: Copy OpenVPN client configuration.
+
+`client.ovpn` is accessible on host machine at `/etc/openvpn-80UDP/client.ovpn`.
+
+Use SCP to transfer it or just copy-paste.
+
+`scp root@docker-host:/etc/openvpn-80UDP/client.ovpn ~/80UDP.ovpn`
+
+### Step 12: Run OpenVPN server.
 
 Execute the following snippet on **host machine**.
 
