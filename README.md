@@ -172,9 +172,15 @@ Execute the following snippet in **container**.
 cat > ${OVPN_SERVER_ROOT}/server.sh << EOF
 #!/bin/sh
 
+# Create TUN/TAP device if it doesn't exist.
+# See https://groups.google.com/d/msg/docker-user/2jFeDGJj36E/XjFh5i1ARpcJ
 mkdir -p /dev/net
 [ ! -c /dev/net/tun ] && mknod /dev/net/tun c 10 200 && chmod 600 /dev/net/tun
 
+# Check TUN/TAP device. It should output "cat: /dev/net/tun: File descriptor in bad state" and exit with code 1.
+cat /dev/net/tun || true \
+
+# Enable and configure NAT.
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE || 
   iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 

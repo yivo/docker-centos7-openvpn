@@ -101,14 +101,6 @@ RUN yum -y update \
  # Check OpenVPN installation. It should print OpenVPN version and exit with code 1.
  && openvpn --version || true \
  \
- # Create TUN/TAP device if it doesn't exist.
- # See https://groups.google.com/d/msg/docker-user/2jFeDGJj36E/XjFh5i1ARpcJ
- && mkdir -p /dev/net \
- && /bin/sh -c "[ ! -c /dev/net/tun ] && mknod /dev/net/tun c 10 200 && chmod 600 /dev/net/tun" \
- \
- # Check TUN/TAP device. It should output "cat: /dev/net/tun: File descriptor in bad state" and exit with code 1.
- && cat /dev/net/tun || true \
- \
  # Cleanup.
  && cd / \
  && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/zlib* /tmp/Linux-PAM* /tmp/lzo* /tmp/lz4* \
