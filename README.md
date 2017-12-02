@@ -8,7 +8,7 @@ Docker container with CentOS 7 and OpenVPN server.
 
 This guide will walk you through the process of installing and configuring OpenVPN server as Docker container.
 
-Get Docker and follow the instructions.
+Get Docker daemon and follow the instructions.
 
 ### Step 1: Configuration variables.
 
@@ -32,6 +32,8 @@ OVPN_SERVER_PROTOCOL="UDP"
 
 Create OpenVPN directory on **host machine**.
 
+This directory will be populated with configuration files, keys, certificates, etc.
+
 ```bash
 mkdir -p /etc/openvpn-${OVPN_SERVER_NAME}
 ```
@@ -50,11 +52,17 @@ docker run \
 
 ### Step 4: Set configuration variables in container.
 
-Execute the snippet from step 1 in **container**.
+Execute the snippet from first step in **container**. 
+
+Don't forget about your changes to configuration variables.
 
 ### Step 5: Easy RSA and cryptographic magic.
 
 Execute the following snippet in **container**.
+
+In most cases you can run this snippet as is since it is very generic.
+
+Check annotations to understand what is this script performs.
 
 ```bash
 # Download Easy RSA and unpack to /etc/openvpn/easy-rsa.
@@ -89,6 +97,12 @@ cp pki/ca.crt \
 ### Step 6: Generating OpenVPN server configuration file.
 
 Execute the following snippet in **container**.
+
+This file is primary configuration of OpenVPN server. 
+
+You should customize this file to your needs.
+
+By default OpenVPN server forces Google DNS usage, serves multiple clients, and compresses data using LZO.
 
 ```bash
 # Generate server configuration file.
@@ -126,6 +140,8 @@ EOF
 ### Step 7: Generating OpenVPN client configuration file.
 
 Execute the following snippet in **container**.
+
+This file is used by OpenVPN clients.
 
 ```bash
 # Generate client configuration file.
