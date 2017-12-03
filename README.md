@@ -239,3 +239,11 @@ docker run \
   eahome00/centos7-openvpn \
   /etc/openvpn/server.sh
 ```
+
+## Credits
+
+Big thanks to maintainers and contributors of the following projects for their amazing work:
+
+* https://github.com/Nyr/openvpn-install
+
+* https://github.com/Angristan/OpenVPN-install
