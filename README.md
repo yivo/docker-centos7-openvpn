@@ -48,7 +48,7 @@ docker run \
   --rm \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn \
   eahome00/centos7-openvpn \
-  /bin/bash
+  /bin/bash -l
 ```
 
 ### Step 4: Set configuration variables in container.
