@@ -17,15 +17,15 @@ This is minimal configuration for your new OpenVPN server.
 Make changes, save somewhere and execute the following snippet on **host machine**.
 
 ```bash
-    OVPN_SERVER_ROOT="/etc/openvpn"
-      OVPN_SERVER_IP=$(curl http://ipecho.net/plain)
-    OVPN_SERVER_PORT="80"
-OVPN_SERVER_PROTOCOL="UDP"
-    OVPN_SERVER_NAME="${OVPN_SERVER_PORT}${OVPN_SERVER_PROTOCOL}"
-  OVPN_SERVER_CIPHER="AES-128-CBC"
-        RSA_KEY_SIZE="3072"
-         DH_KEY_SIZE="3072"
-       EASY_RSA_ROOT="${OVPN_SERVER_ROOT}/easy-rsa"
+    export OVPN_SERVER_ROOT="/etc/openvpn"
+      export OVPN_SERVER_IP=$(curl http://ipecho.net/plain)
+    export OVPN_SERVER_PORT="80"
+export OVPN_SERVER_PROTOCOL="UDP"
+    export OVPN_SERVER_NAME="${OVPN_SERVER_PORT}${OVPN_SERVER_PROTOCOL}"
+  export OVPN_SERVER_CIPHER="AES-128-CBC"
+        export RSA_KEY_SIZE="3072"
+         export DH_KEY_SIZE="3072"
+       export EASY_RSA_ROOT="${OVPN_SERVER_ROOT}/easy-rsa"
 ```
 
 ### Step 2: Permanent OpenVPN directory.
