@@ -14,11 +14,9 @@ Get Docker daemon and follow the instructions.
 
 This is minimal configuration for your new OpenVPN server. 
 
-Make changes, save somewhere and execute the following snippet on **host machine**.
+Make changes, save somewhere and execute the following snippet on **host machine**:
 
 ```bash
-#!/usr/bin/env bash
-
     export OVPN_SERVER_ROOT="/etc/openvpn"
       export OVPN_SERVER_IP=$(curl http://ipecho.net/plain)
     export OVPN_SERVER_PORT="80"
@@ -47,6 +45,7 @@ To run container and create new instance of container's shell execute the follow
 ```bash
 docker run \
   -it \
+  --rm \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn \
   eahome00/centos7-openvpn \
   /bin/bash
