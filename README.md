@@ -17,6 +17,8 @@ This is minimal configuration for your new OpenVPN server.
 Make changes, save somewhere and execute the following snippet on **host machine**.
 
 ```bash
+#!/usr/bin/env bash
+
     export OVPN_SERVER_ROOT="/etc/openvpn"
       export OVPN_SERVER_IP=$(curl http://ipecho.net/plain)
     export OVPN_SERVER_PORT="80"
