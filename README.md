@@ -239,9 +239,10 @@ docker run \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
   -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
   --name openvpn-${OVPN_SERVER_NAME} \
+  --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn \
+  eahome00/centos7-openvpn:latest \
   /etc/openvpn/server.sh
 ```
 
@@ -255,10 +256,52 @@ docker run \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
   -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
   --name openvpn-${OVPN_SERVER_NAME} \
+  --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn \
+  eahome00/centos7-openvpn:latest \
   /etc/openvpn/server.sh
+```
+
+### Step 13: Docker Compose config (optional).
+
+1. Create root directory for Docker Compose config and navigate to it:
+
+```bash
+mkdir ~/openvpn-${OVPN_SERVER_NAME} && cd ~/openvpn-${OVPN_SERVER_NAME}
+```
+
+2. Generate `docker-compose.yml` file:
+
+```bash
+cat > docker-compose.yml << EOF
+version: '3.5'
+
+services:
+  server:
+    image: eahome00/centos7-openvpn:latest
+    command: '/etc/openvpn/server.sh'
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - ${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/$(echo ${OVPN_SERVER_PROTOCOL} | tr "[:upper:]" "[:lower:]")
+    volumes:
+      - type: bind
+        source: /etc/openvpn-${OVPN_SERVER_NAME}
+        target: /etc/openvpn
+        read_only: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 8MB
+        max-file: '1'
+EOF
+```
+3. Run OpenVPN server:
+
+```bash
+docker-compose up -d
 ```
 
 ## Credits
