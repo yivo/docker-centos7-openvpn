@@ -228,14 +228,34 @@ Use SCP to transfer it or just copy-paste.
 
 ### Step 12: Run OpenVPN server.
 
-Execute the following snippet on **host machine**.
+Execute the following snippet on **host machine** to run OpenVPN server in **foreground**:
 
 ```bash
 docker run \
   -it \
+  --rm \
   --cap-add=NET_ADMIN \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
   -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
+  --name openvpn-${OVPN_SERVER_NAME} \
+  --log-opt max-size=8M \
+  --log-opt max-file=1 \
+  eahome00/centos7-openvpn \
+  /etc/openvpn/server.sh
+```
+
+Execute the following snippet on **host machine** to run OpenVPN server in **background**:
+
+```bash
+docker run \
+  -d \
+  --restart=unless-stopped \
+  --cap-add=NET_ADMIN \
+  --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
+  -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
+  --name openvpn-${OVPN_SERVER_NAME} \
+  --log-opt max-size=8M \
+  --log-opt max-file=1 \
   eahome00/centos7-openvpn \
   /etc/openvpn/server.sh
 ```
