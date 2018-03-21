@@ -66,8 +66,8 @@ Check annotations to understand what is this script performs.
 
 ```bash
 # Download Easy RSA and unpack to /etc/openvpn/easy-rsa.
-curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.3/EasyRSA-3.0.3.tgz | tar xz -C ${OVPN_SERVER_ROOT}
-mv ${OVPN_SERVER_ROOT}/EasyRSA-3.0.3 ${EASY_RSA_ROOT}
+curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.4/EasyRSA-3.0.4.tgz | tar xz -C ${OVPN_SERVER_ROOT}
+mv ${OVPN_SERVER_ROOT}/EasyRSA-3.0.4 ${EASY_RSA_ROOT}
 
 # Populate Easy RSA vars.
 echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
