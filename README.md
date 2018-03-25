@@ -26,6 +26,7 @@ export OVPN_SERVER_PROTOCOL="UDP"
         export RSA_KEY_SIZE="3072"
          export DH_KEY_SIZE="3072"
        export EASY_RSA_ROOT="${OVPN_SERVER_ROOT}/easy-rsa"
+  export USE_PUBLIC_DH_TOOL="1" # Set to "1" if you want to use https://2ton.com.au/dhtool/ for getting DH parameter instead of generating by yourself using OpenSSL utility.
 ```
 
 ### Step 2: Permanent OpenVPN directory.
@@ -77,7 +78,11 @@ echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
 cd ${EASY_RSA_ROOT}
 ./easyrsa init-pki
 ./easyrsa --batch build-ca nopass
-openssl dhparam -out dh.pem ${DH_KEY_SIZE}
+if if [ "${USE_PUBLIC_DH_TOOL}" = "1" ]; then
+  curl https://2ton.com.au/getprimes/random/dhparam/${DH_KEY_SIZE} > dh.pem
+else
+  openssl dhparam -out dh.pem ${DH_KEY_SIZE}
+fi
 ./easyrsa build-server-full server nopass
 ./easyrsa build-client-full client nopass
 EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
