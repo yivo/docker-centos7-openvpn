@@ -31,7 +31,7 @@ RUN yum -y update \
  && curl -sL http://zlib.net/zlib-1.2.11.tar.gz | tar xz -C /tmp \
  \
  # Download Linux-PAM source code.
- && curl -sL https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz | tar xz -C /tmp \
+ && curl -sL https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz | tar xJ -C /tmp \
  \
  # Download OpenSSL library source code.
  && curl -sL https://www.openssl.org/source/openssl-1.1.0h.tar.gz | tar xz -C /tmp \
