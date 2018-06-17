@@ -51,11 +51,6 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make -j $(nproc)" \
  && scl enable devtoolset-7 "make install" \
  \
- # Symlink shared libraries since "make install" doesn't do it for some reasons.
- # Without this OpenVPN executable fails to load "liblz4.so.0".
- # Use "ldd $(which openvpn)" to check how executable resolves shared libraries.
- && ln -s /usr/local/lib/liblz4.so* /lib64 \
- \
  # Build zlib.
  && cd /tmp/zlib-1.2.11 \
  && scl enable devtoolset-7 " \
