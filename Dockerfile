@@ -18,6 +18,9 @@ RUN yum -y update \
  # OpenVPN build scripts require generic network tools to be present in the system.
  && yum -y install net-tools \
  \
+ # Install XZ.
+ && yum -y install xz \
+ \
  # Download LZO library source code.
  && curl -sL http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz | tar xz -C /tmp \
  \
@@ -28,7 +31,7 @@ RUN yum -y update \
  && curl -sL http://zlib.net/zlib-1.2.11.tar.gz | tar xz -C /tmp \
  \
  # Download Linux-PAM source code.
- && curl -sL https://github.com/linux-pam/linux-pam/archive/v1.3.1.tar.gz | tar xz -C /tmp \
+ && curl -sL https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz | tar xz -C /tmp \
  \
  # Download OpenSSL library source code.
  && curl -sL https://www.openssl.org/source/openssl-1.1.0h.tar.gz | tar xz -C /tmp \
@@ -61,7 +64,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build Linux-PAM.
- && cd /tmp/linux-pam-1.3.1 \
+ && cd /tmp/Linux-PAM-1.3.1 \
  && scl enable devtoolset-7 " \
     ./configure \
        --prefix=/usr/local \
@@ -98,6 +101,6 @@ RUN yum -y update \
  \
  # Cleanup.
  && cd / \
- && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/zlib* /tmp/linux-pam* /tmp/lzo* /tmp/lz4* \
+ && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/zlib* /tmp/Linux-PAM* /tmp/lzo* /tmp/lz4* \
  && yum clean all \
  && rm -rf /var/cache/yum
