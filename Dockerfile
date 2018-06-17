@@ -61,7 +61,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build Linux-PAM.
- && cd /tmp/Linux-PAM-1.3.1 \
+ && cd /tmp/linux-pam-1.3.1 \
  && scl enable devtoolset-7 " \
     ./configure \
        --prefix=/usr/local \
@@ -94,10 +94,10 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Check OpenVPN installation. It should print OpenVPN version and exit with code 1.
- && openvpn --version || true \
+ && sh -c "openvpn --version || true" \
  \
  # Cleanup.
  && cd / \
- && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/zlib* /tmp/Linux-PAM* /tmp/lzo* /tmp/lz4* \
+ && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/zlib* /tmp/linux-pam* /tmp/lzo* /tmp/lz4* \
  && yum clean all \
  && rm -rf /var/cache/yum
