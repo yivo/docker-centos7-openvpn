@@ -48,7 +48,7 @@ docker run \
   -it \
   --rm \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn \
-  eahome00/centos7-openvpn \
+  eahome00/centos7-openvpn:2.4.8 \
   /bin/bash -l
 ```
 
