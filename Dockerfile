@@ -25,7 +25,7 @@ RUN yum -y update \
  && curl -sL http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz | tar xz -C /tmp \
  \
  # Download LZ4 library source code.
- && curl -sL https://github.com/lz4/lz4/archive/v1.8.3.tar.gz | tar xz -C /tmp \
+ && curl -sL https://github.com/lz4/lz4/archive/v1.9.2.tar.gz | tar xz -C /tmp \
  \
  # Download zlib library source code.
  && curl -sL http://zlib.net/zlib-1.2.11.tar.gz | tar xz -C /tmp \
@@ -34,10 +34,10 @@ RUN yum -y update \
  && curl -sL https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz | tar xJ -C /tmp \
  \
  # Download OpenSSL library source code.
- && curl -sL https://www.openssl.org/source/openssl-1.1.0j.tar.gz | tar xz -C /tmp \
+ && curl -sL https://www.openssl.org/source/openssl-1.1.1d.tar.gz | tar xz -C /tmp \
  \
  # Download OpenVPN source code.
- && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.4.6.tar.gz | tar xz -C /tmp \
+ && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.4.8.tar.gz | tar xz -C /tmp \
  \
  # Build LZO.
  && cd /tmp/lzo-2.10 \
@@ -50,7 +50,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build LZ4.
- && cd /tmp/lz4-1.8.3 \
+ && cd /tmp/lz4-1.9.2 \
  && scl enable devtoolset-7 "make -j $(nproc)" \
  && scl enable devtoolset-7 "make install" \
  \
@@ -75,7 +75,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build OpenSSL.
- && cd /tmp/openssl-1.1.0j \
+ && cd /tmp/openssl-1.1.1d \
  && scl enable devtoolset-7 " \
     ./Configure \
         gcc \
@@ -86,7 +86,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build OpenVPN.
- && cd /tmp/openvpn-2.4.6 \
+ && cd /tmp/openvpn-2.4.8 \
  && scl enable devtoolset-7 " \
    ./configure \
      --prefix=/usr/local \
