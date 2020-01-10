@@ -22,7 +22,7 @@ Make changes, save somewhere and execute the following snippet on **host machine
     export OVPN_SERVER_PORT="80"
 export OVPN_SERVER_PROTOCOL="UDP"
     export OVPN_SERVER_NAME="${OVPN_SERVER_PORT}${OVPN_SERVER_PROTOCOL}"
-  export OVPN_SERVER_CIPHER="AES-128-CBC"
+  export OVPN_SERVER_CIPHER="AES-128-GCM"
         export RSA_KEY_SIZE="3072"
          export DH_KEY_SIZE="3072"
        export EASY_RSA_ROOT="${OVPN_SERVER_ROOT}/easy-rsa"
@@ -124,8 +124,8 @@ keepalive 10 120
 topology subnet
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt
-push "dhcp-option DNS 208.67.222.222"
-push "dhcp-option DNS 208.67.220.220"
+push "dhcp-option DNS 1.1.1.1"
+push "dhcp-option DNS 1.0.0.1"
 push "redirect-gateway def1 bypass-dhcp"
 crl-verify crl.pem
 ca ca.crt
@@ -134,12 +134,13 @@ key server.key
 tls-auth tls-auth.key 0
 dh dh.pem
 auth SHA256
-cipher AES-128-CBC
+cipher ${OVPN_SERVER_CIPHER}
+ncp-ciphers ${OVPN_SERVER_CIPHER}
 tls-server
 tls-version-min 1.2
 tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
 duplicate-cn
-compress lzo
+compress lz4-v2
 EOF
 ```
 
@@ -167,9 +168,10 @@ cipher ${OVPN_SERVER_CIPHER}
 tls-client
 tls-version-min 1.2
 tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
-setenv opt block-outside-dns
+ignore-unknown-option block-outside-dns
+block-outside-dns
 verb 3
-compress lzo
+compress lz4-v2
 <ca>
 $(cat ${EASY_RSA_ROOT}/pki/ca.crt)
 </ca>
