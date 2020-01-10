@@ -78,7 +78,7 @@ echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
 cd ${EASY_RSA_ROOT}
 ./easyrsa init-pki
 ./easyrsa --batch build-ca nopass
-if if [ "${USE_PUBLIC_DH_TOOL}" = "1" ]; then
+if [ "${USE_PUBLIC_DH_TOOL}" = "1" ]; then
   curl https://2ton.com.au/getprimes/random/dhparam/${DH_KEY_SIZE} > dh.pem
 else
   openssl dhparam -out dh.pem ${DH_KEY_SIZE}
@@ -247,7 +247,7 @@ docker run \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:latest \
+  eahome00/centos7-openvpn:2.4.8 \
   /etc/openvpn/server.sh
 ```
 
@@ -264,7 +264,7 @@ docker run \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:latest \
+  eahome00/centos7-openvpn:2.4.8 \
   /etc/openvpn/server.sh
 ```
 
@@ -276,15 +276,15 @@ docker run \
 mkdir ~/openvpn-${OVPN_SERVER_NAME} && cd ~/openvpn-${OVPN_SERVER_NAME}
 ```
 
-2. Generate `docker-compose.yml` file:
+2. Generate `docker-compose.yaml` file:
 
 ```bash
-cat > docker-compose.yml << EOF
+cat > docker-compose.yaml << EOF
 version: '3.5'
 
 services:
   server:
-    image: eahome00/centos7-openvpn:latest
+    image: eahome00/centos7-openvpn:2.4.8
     command: '/etc/openvpn/server.sh'
     restart: unless-stopped
     cap_add:
