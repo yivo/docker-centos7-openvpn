@@ -34,7 +34,7 @@ RUN yum -y update \
  && curl -sL https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz | tar xJ -C /tmp \
  \
  # Download OpenSSL library source code.
- && curl -sL https://www.openssl.org/source/openssl-1.1.1d.tar.gz | tar xz -C /tmp \
+ && curl -sL https://www.openssl.org/source/openssl-1.1.0l.tar.gz | tar xz -C /tmp \
  \
  # Download OpenVPN source code.
  && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.4.8.tar.gz | tar xz -C /tmp \
@@ -75,7 +75,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build OpenSSL.
- && cd /tmp/openssl-1.1.1d \
+ && cd /tmp/openssl-1.1.0l \
  && scl enable devtoolset-7 " \
     ./Configure \
         gcc \
