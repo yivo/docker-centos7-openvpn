@@ -219,7 +219,15 @@ Execute the following snippet in **container**.
 ```bash
 chown -R root:root ${OVPN_SERVER_ROOT}
 chmod -R 600 ${OVPN_SERVER_ROOT}
-chmod u+x ${OVPN_SERVER_ROOT}/server.sh
+chmod 755 ${OVPN_SERVER_ROOT}
+chmod 700 ${OVPN_SERVER_ROOT}/server.sh
+
+touch ${OVPN_SERVER_ROOT}/ipp.txt
+chown nobody:nobody ${OVPN_SERVER_ROOT}/ipp.txt
+chmod 666 ${OVPN_SERVER_ROOT}/ipp.txt
+
+chown nobody:nobody ${OVPN_SERVER_ROOT}/crl.pem
+chown 400 ${OVPN_SERVER_ROOT}/crl.pem
 ```
 
 ### Step 10: Stop container and detach from it.
