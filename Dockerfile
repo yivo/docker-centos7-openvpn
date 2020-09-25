@@ -37,7 +37,7 @@ RUN yum -y update \
  && curl -sL https://www.openssl.org/source/openssl-1.1.0l.tar.gz | tar xz -C /tmp \
  \
  # Download OpenVPN source code.
- && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.4.8.tar.gz | tar xz -C /tmp \
+ && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.4.9.tar.gz | tar xz -C /tmp \
  \
  # Build LZO.
  && cd /tmp/lzo-2.10 \
@@ -86,7 +86,7 @@ RUN yum -y update \
  && scl enable devtoolset-7 "make install" \
  \
  # Build OpenVPN.
- && cd /tmp/openvpn-2.4.8 \
+ && cd /tmp/openvpn-2.4.9 \
  && scl enable devtoolset-7 " \
    ./configure \
      --prefix=/usr/local \
