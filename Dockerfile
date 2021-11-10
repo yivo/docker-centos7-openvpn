@@ -1,4 +1,4 @@
-FROM centos:7.5.1804
+FROM centos:7.9.2009
 
  # Update database and installed packages.
 RUN yum -y update \
@@ -21,85 +21,100 @@ RUN yum -y update \
  # Install XZ.
  && yum -y install xz \
  \
- # Download LZO library source code.
- && curl -sL http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz | tar xz -C /tmp \
+ # Install C library static libraries for static linking.
+ && yum -y install glibc-static \
  \
  # Download LZ4 library source code.
- && curl -sL https://github.com/lz4/lz4/archive/v1.9.2.tar.gz | tar xz -C /tmp \
- \
- # Download zlib library source code.
- && curl -sL http://zlib.net/zlib-1.2.11.tar.gz | tar xz -C /tmp \
- \
- # Download Linux-PAM source code.
- && curl -sL https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz | tar xJ -C /tmp \
+ && curl -sL https://github.com/lz4/lz4/archive/v1.9.3.tar.gz | tar xz -C /tmp \
  \
  # Download OpenSSL library source code.
- && curl -sL https://www.openssl.org/source/openssl-1.1.0l.tar.gz | tar xz -C /tmp \
+ && curl -sL https://www.openssl.org/source/openssl-1.1.1l.tar.gz | tar xz -C /tmp \
  \
  # Download OpenVPN source code.
- && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.4.9.tar.gz | tar xz -C /tmp \
+ && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.5.4.tar.gz | tar xz -C /tmp \
  \
- # Build LZO.
- && cd /tmp/lzo-2.10 \
- && scl enable devtoolset-7 " \
-    ./configure \
-       --prefix=/usr/local \
-       --disable-dependency-tracking \
-    " \
- && scl enable devtoolset-7 "make -j $(nproc)" \
- && scl enable devtoolset-7 "make install" \
- \
+ # Create directory build.
+ && mkdir /openvpn-build
+
  # Build LZ4.
- && cd /tmp/lz4-1.9.2 \
- && scl enable devtoolset-7 "make -j $(nproc)" \
- && scl enable devtoolset-7 "make install" \
- \
- # Build zlib.
- && cd /tmp/zlib-1.2.11 \
+RUN cd /tmp/lz4-1.9.3 \
  && scl enable devtoolset-7 " \
-    ./configure \
-        --prefix=/usr/local \
+    make \
+      -j $(nproc) \
+      CC=gcc \
+      LD=gcc \
+      BUILD_STATIC=yes \
+      BUILD_SHARED=no \
+      PREFIX=/openvpn-build \
+      VERBOSE=1 \
+      CFLAGS='-m64' \
+      LDFLAGS='-static -m64' \
     " \
- && scl enable devtoolset-7 "make -j $(nproc)" \
- && scl enable devtoolset-7 "make install" \
- \
- # Build Linux-PAM.
- && cd /tmp/Linux-PAM-1.3.1 \
  && scl enable devtoolset-7 " \
-    ./configure \
-       --prefix=/usr/local \
-       --includedir=/usr/local/include/security \
-       --disable-dependency-tracking \
-    " \
- && scl enable devtoolset-7 "make -j $(nproc)" \
- && scl enable devtoolset-7 "make install" \
- \
+    make install \
+      -j $(nproc) \
+      CC=gcc \
+      LD=gcc \
+      BUILD_STATIC=yes \
+      BUILD_SHARED=no \
+      PREFIX=/openvpn-build \
+      VERBOSE=1 \
+      CFLAGS='-m64' \
+      LDFLAGS='-static -m64' \
+    "
+
  # Build OpenSSL.
- && cd /tmp/openssl-1.1.0l \
+RUN cd /tmp/openssl-1.1.1l \
  && scl enable devtoolset-7 " \
     ./Configure \
-        gcc \
-        zlib \
-        --prefix=/usr/local \
+       gcc \
+       -static \
+       -static-libgcc \
+       -m64 \
+       no-shared \
+       no-autoload-config \
+       no-tests \
+       --prefix=/openvpn-build \
+       --openssldir=/openvpn-build/ssl \
     " \
  && scl enable devtoolset-7 "make -j $(nproc)" \
- && scl enable devtoolset-7 "make install" \
- \
- # Build OpenVPN.
- && cd /tmp/openvpn-2.4.9 \
+ && scl enable devtoolset-7 "make install_sw" \
+ && scl enable devtoolset-7 "make install_ssldirs"
+
+ # Build OpenVPN. To look for options: "./configure --help".
+RUN cd /tmp/openvpn-2.5.4 \
  && scl enable devtoolset-7 " \
    ./configure \
-     --prefix=/usr/local \
-     --disable-dependency-tracking \
+       --prefix=/openvpn-build \
+       --enable-static \
+       --disable-shared \
+       --disable-debug \
+       --disable-plugins \
+       --enable-port-share \
+       --enable-lz4 \
+       --disable-plugin-auth-pam \
+       --disable-lzo \
+       OPENSSL_LIBS='-L/openvpn-build/lib -lssl -lcrypto' \
+       OPENSSL_CFLAGS='-I/openvpn-build/include' \
+       OPENSSL_CRYPTO_LIBS='-L/openvpn-build/lib -lcrypto' \
+       OPENSSL_CRYPTO_CFLAGS='-I/openvpn-build/include' \
+       LZ4_CFLAGS='-I/openvpn-build/include' \
+       LZ4_LIBS='-L/openvpn-build/lib -llz4' \
    " \
- && scl enable devtoolset-7 "make -j $(nproc)" \
- && scl enable devtoolset-7 "make install" \
+ && scl enable devtoolset-7 "make -j $(nproc) LIBS='-all-static'" \
+ && scl enable devtoolset-7 "make install"
+
+ # Make openvpn executable available system-wide.
+RUN ln -s /openvpn-build/sbin/openvpn /usr/local/sbin/ \
+ \
+ # Make openssl executable available system-wide.
+ && ln -s /openvpn-build/bin/openssl /usr/local/bin/ \
  \
  # Check OpenVPN installation. It should print OpenVPN version and exit with code 1.
  && sh -c "openvpn --version || true" \
  \
  # Cleanup.
  && cd / \
- && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/zlib* /tmp/Linux-PAM* /tmp/lzo* /tmp/lz4* \
+ && rm -rf /tmp/openvpn* /tmp/openssl* /tmp/lz4* \
  && yum clean all \
  && rm -rf /var/cache/yum

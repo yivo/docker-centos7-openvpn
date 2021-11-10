@@ -23,10 +23,10 @@ Make changes, save somewhere and execute the following snippet on **host machine
 export OVPN_SERVER_PROTOCOL="UDP"
     export OVPN_SERVER_NAME="${OVPN_SERVER_PORT}${OVPN_SERVER_PROTOCOL}"
   export OVPN_SERVER_CIPHER="AES-128-GCM"
-        export RSA_KEY_SIZE="3072"
-         export DH_KEY_SIZE="3072"
+        export RSA_KEY_SIZE="2048"
+         export DH_KEY_SIZE="2048"
        export EASY_RSA_ROOT="${OVPN_SERVER_ROOT}/easy-rsa"
-  export USE_PUBLIC_DH_TOOL="1" # Set to "1" if you want to use https://2ton.com.au/dhtool/ for getting DH parameter instead of generating by yourself using OpenSSL utility.
+  export USE_PUBLIC_DH_TOOL="false" # Set to "true" if you want to use https://2ton.com.au/dhtool/ for getting DH parameter instead of generating by yourself using OpenSSL utility.
 ```
 
 ### Step 2: Permanent OpenVPN directory.
@@ -48,7 +48,7 @@ docker run \
   -it \
   --rm \
   --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn \
-  eahome00/centos7-openvpn:2.4.9 \
+  eahome00/centos7-openvpn:2.5.4 \
   /bin/bash -l
 ```
 
@@ -62,14 +62,12 @@ Don't forget about your changes to configuration variables.
 
 Execute the following snippet in **container**.
 
-In most cases you can run this snippet as is since it is very generic.
-
 Check annotations to understand what is this script performs.
 
 ```bash
 # Download Easy RSA and unpack to /etc/openvpn/easy-rsa.
-curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.4/EasyRSA-3.0.4.tgz | tar xz -C ${OVPN_SERVER_ROOT}
-mv ${OVPN_SERVER_ROOT}/EasyRSA-3.0.4 ${EASY_RSA_ROOT}
+curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz | tar xz -C ${OVPN_SERVER_ROOT}
+mv ${OVPN_SERVER_ROOT}/EasyRSA-3.0.8 ${EASY_RSA_ROOT}
 
 # Populate Easy RSA vars.
 echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
@@ -78,17 +76,17 @@ echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
 cd ${EASY_RSA_ROOT}
 ./easyrsa init-pki
 ./easyrsa --batch build-ca nopass
-if [ "${USE_PUBLIC_DH_TOOL}" = "1" ]; then
+if [ "${USE_PUBLIC_DH_TOOL}" = "true" ]; then
   curl https://2ton.com.au/getprimes/random/dhparam/${DH_KEY_SIZE} > dh.pem
 else
   openssl dhparam -out dh.pem ${DH_KEY_SIZE}
 fi
-./easyrsa build-server-full server nopass
-./easyrsa build-client-full client nopass
+EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-server-full server nopass
+EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full client nopass
 EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
 
-# Generate TLS-auth key.
-openvpn --genkey --secret /etc/openvpn/tls-auth.key
+# Generate TLS authentication key.
+openvpn --genkey secret /etc/openvpn/tls-auth.key
 
 # Copy all the generated files to /etc/openvpn.
 cp pki/ca.crt \
@@ -114,7 +112,7 @@ By default OpenVPN server forces Google DNS usage, serves multiple clients, and 
 # Generate server configuration file.
 cat > ${OVPN_SERVER_ROOT}/server.conf << EOF
 port ${OVPN_SERVER_PORT}
-proto ${OVPN_SERVER_PROTOCOL,,}
+proto ${OVPN_SERVER_PROTOCOL,,}4
 dev tun
 user nobody
 group nobody
@@ -135,13 +133,16 @@ tls-auth tls-auth.key 0
 dh dh.pem
 auth SHA256
 cipher ${OVPN_SERVER_CIPHER}
-ncp-ciphers ${OVPN_SERVER_CIPHER}
+data-ciphers ${OVPN_SERVER_CIPHER}
 tls-server
 tls-version-min 1.2
-tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
+tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
 duplicate-cn
-compress lz4-v2
 EOF
+
+if [[ "${OVPN_SERVER_PROTOCOL}" = "UDP" ]]; then
+  echo "explicit-exit-notify" >> ${OVPN_SERVER_ROOT}/server.conf
+fi
 ```
 
 ### Step 7: Generating OpenVPN client configuration file.
@@ -154,7 +155,7 @@ This file is used by OpenVPN clients.
 # Generate client configuration file.
 cat > ${OVPN_SERVER_ROOT}/client.ovpn << EOF
 client
-proto ${OVPN_SERVER_PROTOCOL,,}
+proto ${OVPN_SERVER_PROTOCOL,,}4
 remote ${OVPN_SERVER_IP} ${OVPN_SERVER_PORT}
 dev tun
 resolv-retry infinite
@@ -167,11 +168,10 @@ auth-nocache
 cipher ${OVPN_SERVER_CIPHER}
 tls-client
 tls-version-min 1.2
-tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
+tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
 ignore-unknown-option block-outside-dns
-block-outside-dns
+setenv opt block-outside-dns
 verb 3
-compress lz4-v2
 <ca>
 $(cat ${EASY_RSA_ROOT}/pki/ca.crt)
 </ca>
@@ -186,6 +186,10 @@ key-direction 1
 $(cat ${OVPN_SERVER_ROOT}/tls-auth.key)
 </tls-auth>
 EOF
+
+if [[ "${OVPN_SERVER_PROTOCOL}" = "UDP" ]]; then
+  echo "explicit-exit-notify" >> ${OVPN_SERVER_ROOT}/client.ovpn
+fi
 ```
 
 ### Step 8: Generating OpenVPN server startup file.
@@ -224,10 +228,10 @@ chmod 700 ${OVPN_SERVER_ROOT}/server.sh
 
 touch ${OVPN_SERVER_ROOT}/ipp.txt
 chown nobody:nobody ${OVPN_SERVER_ROOT}/ipp.txt
-chmod 666 ${OVPN_SERVER_ROOT}/ipp.txt
+chmod 660 ${OVPN_SERVER_ROOT}/ipp.txt
 
 chown nobody:nobody ${OVPN_SERVER_ROOT}/crl.pem
-chown 400 ${OVPN_SERVER_ROOT}/crl.pem
+chmod 400 ${OVPN_SERVER_ROOT}/crl.pem
 ```
 
 ### Step 10: Stop container and detach from it.
@@ -241,6 +245,19 @@ Press `CTRL+C` or type `exit` in **container's shell**.
 Use SCP to transfer it or just copy-paste.
 
 `scp root@docker-host:/etc/openvpn-80UDP/client.ovpn ~/80UDP.ovpn`
+
+### Step 12: Configure host.
+
+```bash
+cat >> /etc/sysctl.conf << EOF
+net.core.default_qdisc=fq
+net.ipv4.tcp_congestion_control=bbr
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.disable_ipv6=1
+EOF
+
+sysctl -p
+```
 
 ### Step 12: Run OpenVPN server.
 
@@ -257,7 +274,7 @@ docker run \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:2.4.9 \
+  eahome00/centos7-openvpn:2.5.4 \
   /etc/openvpn/server.sh
 ```
 
@@ -274,7 +291,7 @@ docker run \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:2.4.9 \
+  eahome00/centos7-openvpn:2.5.4 \
   /etc/openvpn/server.sh
 ```
 
@@ -290,11 +307,11 @@ mkdir ~/openvpn-${OVPN_SERVER_NAME} && cd ~/openvpn-${OVPN_SERVER_NAME}
 
 ```bash
 cat > docker-compose.yaml << EOF
-version: '3.5'
+version: '3.8'
 
 services:
   server:
-    image: eahome00/centos7-openvpn:2.4.9
+    image: eahome00/centos7-openvpn:2.5.4
     command: '/etc/openvpn/server.sh'
     restart: unless-stopped
     cap_add:
@@ -305,7 +322,6 @@ services:
       - type: bind
         source: /etc/openvpn-${OVPN_SERVER_NAME}
         target: /etc/openvpn
-        read_only: true
     logging:
       driver: json-file
       options:
@@ -313,6 +329,7 @@ services:
         max-file: '1'
 EOF
 ```
+
 3. Run OpenVPN server:
 
 ```bash
@@ -326,3 +343,5 @@ Big thanks to maintainers and contributors of the following projects for their a
 * https://github.com/Nyr/openvpn-install
 
 * https://github.com/Angristan/OpenVPN-install
+  
+* https://github.com/OpenVPN/openvpn-build
