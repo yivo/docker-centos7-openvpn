@@ -28,10 +28,10 @@ RUN yum -y update \
  && curl -sL https://github.com/lz4/lz4/archive/v1.9.3.tar.gz | tar xz -C /tmp \
  \
  # Download OpenSSL library source code.
- && curl -sL https://www.openssl.org/source/openssl-1.1.1l.tar.gz | tar xz -C /tmp \
+ && curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz | tar xz -C /tmp \
  \
  # Download OpenVPN source code.
- && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.5.4.tar.gz | tar xz -C /tmp \
+ && curl -sL https://swupdate.openvpn.org/community/releases/openvpn-2.5.7.tar.gz | tar xz -C /tmp \
  \
  # Create directory build.
  && mkdir /openvpn-build
@@ -64,7 +64,7 @@ RUN cd /tmp/lz4-1.9.3 \
     "
 
  # Build OpenSSL.
-RUN cd /tmp/openssl-1.1.1l \
+RUN cd /tmp/openssl-1.1.1q \
  && scl enable devtoolset-7 " \
     ./Configure \
        gcc \
@@ -82,7 +82,7 @@ RUN cd /tmp/openssl-1.1.1l \
  && scl enable devtoolset-7 "make install_ssldirs"
 
  # Build OpenVPN. To look for options: "./configure --help".
-RUN cd /tmp/openvpn-2.5.4 \
+RUN cd /tmp/openvpn-2.5.7 \
  && scl enable devtoolset-7 " \
    ./configure \
        --prefix=/openvpn-build \
