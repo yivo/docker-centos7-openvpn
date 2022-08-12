@@ -10,36 +10,37 @@ This guide will walk you through the process of installing and configuring OpenV
 
 Get Docker daemon and follow the instructions.
 
-### Step 1: Configuration variables.
+### Step 1: Configuration variables
 
 This is minimal configuration for your new OpenVPN server. 
 
 Make changes, save somewhere and execute the following snippet on **host machine**:
 
 ```bash
-    export OVPN_SERVER_ROOT="/etc/openvpn"
-      export OVPN_SERVER_IP=$(curl http://ipecho.net/plain)
-    export OVPN_SERVER_PORT="80"
-export OVPN_SERVER_PROTOCOL="UDP"
-    export OVPN_SERVER_NAME="${OVPN_SERVER_PORT}${OVPN_SERVER_PROTOCOL}"
-  export OVPN_SERVER_CIPHER="AES-128-GCM"
-        export RSA_KEY_SIZE="2048"
-         export DH_KEY_SIZE="2048"
-       export EASY_RSA_ROOT="${OVPN_SERVER_ROOT}/easy-rsa"
-  export USE_PUBLIC_DH_TOOL="false" # Set to "true" if you want to use https://2ton.com.au/dhtool/ for getting DH parameter instead of generating by yourself using OpenSSL utility.
+    export OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH="/etc/openvpn"
+      export OPENVPN_SERVER_IP=$(curl http://ipecho.net/plain)
+    export OPENVPN_SERVER_PORT="80"
+export OPENVPN_SERVER_PROTOCOL="udp"
+    export OPENVPN_SERVER_NAME="${OPENVPN_SERVER_PORT}${OPENVPN_SERVER_PROTOCOL}"
+    export OPENVPN_SERVER_HOME_DIRECTORY_PATH="${HOME}/openvpn_${OPENVPN_SERVER_NAME}"
+  export OPENVPN_SERVER_CIPHER="AES-128-GCM"
+           export RSA_KEY_SIZE="2048"
+            export DH_KEY_SIZE="2048"
+          export EASY_RSA_ROOT="${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/EasyRSA-3.1.0"
 ```
 
-### Step 2: Permanent OpenVPN directory.
+### Step 2: Permanent OpenVPN directory
 
 Create OpenVPN directory on **host machine**.
 
 This directory will be populated with configuration files, keys, certificates, etc.
 
 ```bash
-mkdir -p /etc/openvpn-${OVPN_SERVER_NAME}
+mkdir -p ${OPENVPN_SERVER_HOME_DIRECTORY_PATH}
+mkdir -p ${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration
 ```
 
-### Step 3: Run container and attach to it.
+### Step 3: Run container and attach to it
 
 To run container and create new instance of container's shell execute the following snippet on **host machine**.
 
@@ -47,18 +48,18 @@ To run container and create new instance of container's shell execute the follow
 docker run \
   -it \
   --rm \
-  --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn \
-  eahome00/centos7-openvpn:2.5.4 \
+  --mount type=bind,source=${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration,target=${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH} \
+  eahome00/centos7-openvpn:2.5.7 \
   /bin/bash -l
 ```
 
-### Step 4: Set configuration variables in container.
+### Step 4: Set configuration variables in container
 
 Execute the snippet from first step in **container**. 
 
 Don't forget about your changes to configuration variables.
 
-### Step 5: Easy RSA and cryptographic magic.
+### Step 5: Easy RSA and cryptographic magic
 
 Execute the following snippet in **container**.
 
@@ -66,8 +67,7 @@ Check annotations to understand what is this script performs.
 
 ```bash
 # Download Easy RSA and unpack to /etc/openvpn/easy-rsa.
-curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz | tar xz -C ${OVPN_SERVER_ROOT}
-mv ${OVPN_SERVER_ROOT}/EasyRSA-3.0.8 ${EASY_RSA_ROOT}
+curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.1.0/EasyRSA-3.1.0.tgz | tar xz -C ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
 
 # Populate Easy RSA vars.
 echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
@@ -75,18 +75,15 @@ echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
 # Create the PKI, set up the CA, the DH params and the server + client certificates.
 cd ${EASY_RSA_ROOT}
 ./easyrsa init-pki
+rm -f vars
 ./easyrsa --batch build-ca nopass
-if [ "${USE_PUBLIC_DH_TOOL}" = "true" ]; then
-  curl https://2ton.com.au/getprimes/random/dhparam/${DH_KEY_SIZE} > dh.pem
-else
-  openssl dhparam -out dh.pem ${DH_KEY_SIZE}
-fi
+openssl dhparam -out dh.pem ${DH_KEY_SIZE}
 EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-server-full server nopass
 EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full client nopass
 EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
 
 # Generate TLS authentication key.
-openvpn --genkey secret /etc/openvpn/tls-auth.key
+openvpn --genkey secret ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/tls-auth.key
 
 # Copy all the generated files to /etc/openvpn.
 cp pki/ca.crt \
@@ -95,24 +92,24 @@ cp pki/ca.crt \
    pki/issued/server.crt \
    pki/private/server.key \
    pki/crl.pem \
-   ${OVPN_SERVER_ROOT}
+   ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
 ```
 
-### Step 6: Generating OpenVPN server configuration file.
+### Step 6: Generating OpenVPN server configuration file
 
 Execute the following snippet in **container**.
 
 This file is primary configuration of OpenVPN server. 
 
-You should customize this file to your needs.
+You may customize this file to fit your needs.
 
-By default OpenVPN server forces Google DNS usage, serves multiple clients, and compresses data using LZO.
+By default OpenVPN server forces CloudFlare DNS usage and allows to serve multiple clients.
 
 ```bash
 # Generate server configuration file.
-cat > ${OVPN_SERVER_ROOT}/server.conf << EOF
-port ${OVPN_SERVER_PORT}
-proto ${OVPN_SERVER_PROTOCOL,,}4
+cat > ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.conf << EOF
+port ${OPENVPN_SERVER_PORT}
+proto ${OPENVPN_SERVER_PROTOCOL,,}4
 dev tun
 user nobody
 group nobody
@@ -122,8 +119,8 @@ keepalive 10 120
 topology subnet
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt
-push "dhcp-option DNS 1.1.1.1"
 push "dhcp-option DNS 1.0.0.1"
+push "dhcp-option DNS 1.1.1.1"
 push "redirect-gateway def1 bypass-dhcp"
 crl-verify crl.pem
 ca ca.crt
@@ -132,20 +129,21 @@ key server.key
 tls-auth tls-auth.key 0
 dh dh.pem
 auth SHA256
-cipher ${OVPN_SERVER_CIPHER}
-data-ciphers ${OVPN_SERVER_CIPHER}
+cipher ${OPENVPN_SERVER_CIPHER}
+data-ciphers ${OPENVPN_SERVER_CIPHER}
 tls-server
 tls-version-min 1.2
 tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
+verb 3
 duplicate-cn
 EOF
 
-if [[ "${OVPN_SERVER_PROTOCOL}" = "UDP" ]]; then
-  echo "explicit-exit-notify" >> ${OVPN_SERVER_ROOT}/server.conf
+if [[ "${OPENVPN_SERVER_PROTOCOL}" = "udp" ]]; then
+  echo "explicit-exit-notify" >> ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.conf
 fi
 ```
 
-### Step 7: Generating OpenVPN client configuration file.
+### Step 7: Generating OpenVPN client configuration file
 
 Execute the following snippet in **container**.
 
@@ -153,10 +151,10 @@ This file is used by OpenVPN clients.
 
 ```bash
 # Generate client configuration file.
-cat > ${OVPN_SERVER_ROOT}/client.ovpn << EOF
+cat > ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/client.ovpn << EOF
 client
-proto ${OVPN_SERVER_PROTOCOL,,}4
-remote ${OVPN_SERVER_IP} ${OVPN_SERVER_PORT}
+proto ${OPENVPN_SERVER_PROTOCOL,,}4
+remote ${OPENVPN_SERVER_IP} ${OPENVPN_SERVER_PORT}
 dev tun
 resolv-retry infinite
 nobind
@@ -165,7 +163,7 @@ persist-tun
 remote-cert-tls server
 auth SHA256
 auth-nocache
-cipher ${OVPN_SERVER_CIPHER}
+cipher ${OPENVPN_SERVER_CIPHER}
 tls-client
 tls-version-min 1.2
 tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
@@ -183,21 +181,21 @@ $(cat ${EASY_RSA_ROOT}/pki/private/client.key)
 </key>
 key-direction 1
 <tls-auth>
-$(cat ${OVPN_SERVER_ROOT}/tls-auth.key)
+$(cat ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/tls-auth.key)
 </tls-auth>
 EOF
 
-if [[ "${OVPN_SERVER_PROTOCOL}" = "UDP" ]]; then
-  echo "explicit-exit-notify" >> ${OVPN_SERVER_ROOT}/client.ovpn
+if [[ "${OPENVPN_SERVER_PROTOCOL}" = "udp" ]]; then
+  echo "explicit-exit-notify" >> ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/client.ovpn
 fi
 ```
 
-### Step 8: Generating OpenVPN server startup file.
+### Step 8: Generating OpenVPN server startup file
 
 Execute the following snippet in **container**.
 
 ```bash
-cat > ${OVPN_SERVER_ROOT}/server.sh << EOF
+cat > ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh << EOF
 #!/bin/sh
 
 # Create TUN/TAP device if it doesn't exist.
@@ -212,33 +210,33 @@ cat /dev/net/tun || true
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE || 
   iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 
-openvpn --config ${OVPN_SERVER_ROOT}/server.conf --cd ${OVPN_SERVER_ROOT}
+openvpn --config ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.conf --cd ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
 EOF
 ```
 
-### Step 9: Set up permissions.
+### Step 9: Set up permissions
 
 Execute the following snippet in **container**.
 
 ```bash
-chown -R root:root ${OVPN_SERVER_ROOT}
-chmod -R 600 ${OVPN_SERVER_ROOT}
-chmod 755 ${OVPN_SERVER_ROOT}
-chmod 700 ${OVPN_SERVER_ROOT}/server.sh
+chown -R root:root ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
+chmod -R 600 ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
+chmod 755 ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
+chmod 700 ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh
 
-touch ${OVPN_SERVER_ROOT}/ipp.txt
-chown nobody:nobody ${OVPN_SERVER_ROOT}/ipp.txt
-chmod 660 ${OVPN_SERVER_ROOT}/ipp.txt
+touch ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/ipp.txt
+chown nobody:nobody ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/ipp.txt
+chmod 660 ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/ipp.txt
 
-chown nobody:nobody ${OVPN_SERVER_ROOT}/crl.pem
-chmod 400 ${OVPN_SERVER_ROOT}/crl.pem
+chown nobody:nobody ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/crl.pem
+chmod 400 ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/crl.pem
 ```
 
-### Step 10: Stop container and detach from it.
+### Step 10: Stop container and detach from it
 
 Press `CTRL+C` or type `exit` in **container's shell**.
 
-### Step 11: Copy OpenVPN client configuration.
+### Step 11: Copy OpenVPN client configuration
 
 `client.ovpn` is accessible on host machine at `/etc/openvpn-80UDP/client.ovpn`.
 
@@ -246,20 +244,22 @@ Use SCP to transfer it or just copy-paste.
 
 `scp root@docker-host:/etc/openvpn-80UDP/client.ovpn ~/80UDP.ovpn`
 
-### Step 12: Configure host.
+### Step 12: Configure host
 
 ```bash
-cat >> /etc/sysctl.conf << EOF
+cat >> /etc/sysctl.d/99-openvpn.conf << EOF
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
 net.ipv4.ip_forward=1
 net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6=1
+net.ipv6.conf.lo.disable_ipv6=1
 EOF
 
-sysctl -p
+sysctl --system
 ```
 
-### Step 12: Run OpenVPN server.
+### Step 12: Run OpenVPN server
 
 Execute the following snippet on **host machine** to run OpenVPN server in **foreground**:
 
@@ -268,14 +268,14 @@ docker run \
   -it \
   --rm \
   --cap-add=NET_ADMIN \
-  --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
-  -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
-  --name openvpn-${OVPN_SERVER_NAME} \
+  --mount type=bind,source=${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration,target=${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH},readonly \
+  -p 0.0.0.0:${OPENVPN_SERVER_PORT}:${OPENVPN_SERVER_PORT}/${OPENVPN_SERVER_PROTOCOL} \
+  --name openvpn_${OPENVPN_SERVER_NAME} \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:2.5.4 \
-  /etc/openvpn/server.sh
+  eahome00/centos7-openvpn:2.5.7 \
+  ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh
 ```
 
 Execute the following snippet on **host machine** to run OpenVPN server in **background**:
@@ -285,55 +285,49 @@ docker run \
   -d \
   --restart=unless-stopped \
   --cap-add=NET_ADMIN \
-  --mount type=bind,source=/etc/openvpn-${OVPN_SERVER_NAME},target=/etc/openvpn,readonly \
-  -p 0.0.0.0:${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/${OVPN_SERVER_PROTOCOL} \
-  --name openvpn-${OVPN_SERVER_NAME} \
+  --mount type=bind,source=${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration,target=${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH},readonly \
+  -p 0.0.0.0:${OPENVPN_SERVER_PORT}:${OPENVPN_SERVER_PORT}/${OPENVPN_SERVER_PROTOCOL} \
+  --name openvpn_${OPENVPN_SERVER_NAME} \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:2.5.4 \
-  /etc/openvpn/server.sh
+  eahome00/centos7-openvpn:2.5.7 \
+  ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh
 ```
 
-### Step 13: Docker Compose config (optional).
+### Step 13: Docker Compose config (optional)
 
-1. Create root directory for Docker Compose config and navigate to it:
-
-```bash
-mkdir ~/openvpn-${OVPN_SERVER_NAME} && cd ~/openvpn-${OVPN_SERVER_NAME}
-```
-
-2. Generate `docker-compose.yaml` file:
+1. Generate `docker-compose.yaml` file:
 
 ```bash
 cat > docker-compose.yaml << EOF
-version: '3.8'
+version: "3.9"
 
 services:
   server:
-    image: eahome00/centos7-openvpn:2.5.4
-    command: '/etc/openvpn/server.sh'
+    image: eahome00/centos7-openvpn:2.5.7
+    command: "${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh"
     restart: unless-stopped
     cap_add:
       - NET_ADMIN
     ports:
-      - ${OVPN_SERVER_PORT}:${OVPN_SERVER_PORT}/$(echo ${OVPN_SERVER_PROTOCOL} | tr "[:upper:]" "[:lower:]")
+      - ${OPENVPN_SERVER_PORT}:${OPENVPN_SERVER_PORT}/${OPENVPN_SERVER_PROTOCOL}
     volumes:
       - type: bind
-        source: /etc/openvpn-${OVPN_SERVER_NAME}
-        target: /etc/openvpn
+        source: ${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration
+        target: ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
     logging:
       driver: json-file
       options:
         max-size: 8MB
-        max-file: '1'
+        max-file: "1"
 EOF
 ```
 
-3. Run OpenVPN server:
+2. Run OpenVPN server:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Credits
