@@ -300,6 +300,8 @@ docker run \
 1. Generate `docker-compose.yaml` file:
 
 ```bash
+cd ${OPENVPN_SERVER_HOME_DIRECTORY_PATH}
+
 cat > docker-compose.yaml << EOF
 version: "3.9"
 
@@ -314,7 +316,7 @@ services:
       - ${OPENVPN_SERVER_PORT}:${OPENVPN_SERVER_PORT}/${OPENVPN_SERVER_PROTOCOL}
     volumes:
       - type: bind
-        source: ${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration
+        source: ./configuration
         target: ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
     logging:
       driver: json-file
