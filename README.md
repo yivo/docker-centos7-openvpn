@@ -207,8 +207,9 @@ mkdir -p /dev/net
 cat /dev/net/tun || true
 
 # Enable and configure NAT.
-iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE || 
+iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE 2>/dev/null || { 
   iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+}
 
 openvpn --config ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.conf --cd ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
 EOF
