@@ -26,7 +26,7 @@ export OPENVPN_SERVER_PROTOCOL="udp"
   export OPENVPN_SERVER_CIPHER="AES-128-GCM"
            export RSA_KEY_SIZE="2048"
             export DH_KEY_SIZE="2048"
-          export EASY_RSA_ROOT="${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/EasyRSA-3.1.0"
+          export EASY_RSA_ROOT="${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/EasyRSA-3.1.1"
 ```
 
 ### Step 2: Permanent OpenVPN directory
@@ -67,7 +67,7 @@ Check annotations to understand what is this script performs.
 
 ```bash
 # Download Easy RSA and unpack to /etc/openvpn/easy-rsa.
-curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.1.0/EasyRSA-3.1.0.tgz | tar xz -C ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
+curl -sL https://github.com/OpenVPN/easy-rsa/releases/download/v3.1.1/EasyRSA-3.1.1.tgz | tar xz -C ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}
 
 # Populate Easy RSA vars.
 echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
