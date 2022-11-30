@@ -47,8 +47,6 @@ RUN cd /tmp/lz4-1.9.4 \
       BUILD_SHARED=no \
       PREFIX=/openvpn-build \
       VERBOSE=1 \
-      CFLAGS='' \
-      LDFLAGS='-static' \
     " \
  && scl enable devtoolset-7 " \
     make install \
@@ -59,8 +57,6 @@ RUN cd /tmp/lz4-1.9.4 \
       BUILD_SHARED=no \
       PREFIX=/openvpn-build \
       VERBOSE=1 \
-      CFLAGS='' \
-      LDFLAGS='-static' \
     "
 
  # Build OpenSSL.
