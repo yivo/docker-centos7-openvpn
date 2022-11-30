@@ -49,7 +49,7 @@ docker run \
   -it \
   --rm \
   --mount type=bind,source=${OPENVPN_SERVER_HOME_DIRECTORY_PATH}/configuration,target=${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH} \
-  eahome00/centos7-openvpn:2.5.7 \
+  eahome00/centos7-openvpn:2.5.8 \
   /bin/bash -l
 ```
 
@@ -275,7 +275,7 @@ docker run \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:2.5.7 \
+  eahome00/centos7-openvpn:2.5.8 \
   ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh
 ```
 
@@ -292,7 +292,7 @@ docker run \
   --log-driver=json-file \
   --log-opt max-size=8M \
   --log-opt max-file=1 \
-  eahome00/centos7-openvpn:2.5.7 \
+  eahome00/centos7-openvpn:2.5.8 \
   ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh
 ```
 
@@ -308,7 +308,7 @@ version: "3.9"
 
 services:
   server:
-    image: eahome00/centos7-openvpn:2.5.7
+    image: eahome00/centos7-openvpn:2.5.8
     command: "${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/server.sh"
     restart: unless-stopped
     cap_add:
