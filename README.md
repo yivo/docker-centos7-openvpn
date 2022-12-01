@@ -74,13 +74,13 @@ echo "set_var EASYRSA_KEY_SIZE ${RSA_KEY_SIZE}" > ${EASY_RSA_ROOT}/vars
 
 # Create the PKI, set up the CA, the DH params and the server + client certificates.
 cd ${EASY_RSA_ROOT}
-./easyrsa init-pki
+./easyrsa --batch init-pki
 rm -f vars
 ./easyrsa --batch build-ca nopass
 openssl dhparam -out dh.pem ${DH_KEY_SIZE}
-EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-server-full server nopass
-EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full client nopass
-EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
+./easyrsa --batch --days=3650 build-server-full server nopass
+./easyrsa --batch --days=3650 build-client-full client nopass
+./easyrsa --batch --days=3650 gen-crl
 
 # Generate TLS authentication key.
 openvpn --genkey secret ${OPENVPN_SERVER_CONFIGURATION_DIRECTORY_PATH}/tls-auth.key
